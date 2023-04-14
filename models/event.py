@@ -19,8 +19,4 @@ class Event(Model):
         return self.end - self.start
 
     def __str__(self):
-        return (
-            f"{self.start.strftime(DATE_FORMAT)} -> "
-            f"{self.end.strftime(DATE_FORMAT)} - "
-            f"{self.description}"
-        )
+        return f"{self.start.strftime(DATE_FORMAT)} -> {self.end.strftime(DATE_FORMAT)} - {self.description}"

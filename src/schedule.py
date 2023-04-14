@@ -24,9 +24,7 @@ def get_last_overlapping_event(start_time, end_time):
 def get_unassigned_slots(start_time, end_time, last_overlapping_event):
     duration = end_time - start_time
     event_date = start_time.date
-    all_following_events = Event.select().where(
-        (Event.start >= end_time, Event.start.date == event_date)
-    )
+    all_following_events = Event.select().where((Event.start >= end_time, Event.start.date == event_date))
 
     events = last_overlapping_event + all_following_events
 
