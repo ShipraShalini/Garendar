@@ -1,0 +1,3 @@
+EVENT_DELIMITER = "-"
+DURATION_DELIMITER = "->"
+DATE_FORMAT = "%Y/%m/%d %H:%M"
