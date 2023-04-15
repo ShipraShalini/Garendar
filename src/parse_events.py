@@ -1,18 +1,17 @@
 from datetime import datetime
 
-from src.constants import DATE_FORMAT, DURATION_DELIMITER, EVENT_DELIMITER
+from src.constants import DATE_FORMAT, DURATION_DELIMITER, EVENT_DELIMITER, SECONDS_IN_9_HOURS
 from src.exceptions import ValidationError
 
 
 def _get_event_duration(start_time, end_time):
     duration = end_time - start_time
-    duration = duration.seconds / 60
-    remainder = duration % 5  # Each event is multiple of 5 mins
-    return duration + remainder
+    remainder = duration.seconds % 300  # Each event is multiple of 5 mins
+    return duration.seconds + remainder
 
 
 def validate_event(start_time, end_time, duration):
-    if duration > 9 * 60:
+    if duration > SECONDS_IN_9_HOURS:
         raise ValidationError("Event can't be longer than 9 hours")
 
     if start_time > end_time:
