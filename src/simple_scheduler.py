@@ -132,9 +132,28 @@ class Scheduler:
 
         self.unscheduled_events[duration].append(event)
 
+
+    @staticmethod
+    def get_next_workday_start(workday: datetime) -> datetime:
+        workday = _get_workday_start(workday)
+        # Refer: https://stackoverflow.com/a/58665023/3803979
+        if workday.isoweekday() in {5, 6}:
+            day_increment = 8 - workday.isoweekday()
+        else:
+            day_increment = 1
+
+        return workday + timedelta(days=day_increment)
+
     def schedule_next(self, last_event, event_to_be_rescheduled):
-        event_to_be_rescheduled["start"] = last_event["end"]
-        event_to_be_rescheduled["end"] = last_event["end"] + timedelta(seconds=event_to_be_rescheduled.pop("duration"))
+        duration = event_to_be_rescheduled.pop("duration")
+        start_time = last_event["end"]
+        end_time = last_event["end"] + timedelta(seconds=duration)
+        if end_time > _get_workday_end(end_time):
+            start_time = self.get_next_workday_start(end_time)
+            end_time = start_time + timedelta(seconds=duration)
+
+        event_to_be_rescheduled["start"] = start_time
+        event_to_be_rescheduled["end"] = end_time
         self.scheduled_events.append(event_to_be_rescheduled)
         return event_to_be_rescheduled
 
@@ -161,17 +180,16 @@ class Scheduler:
         # index = bisect.bisect_right(self.existing_events, first_unscheduled_event_start_time, key=lambda x: x["start"])
         # self.existing_events = self.existing_events[index:]
 
-        for i, event in enumerate(self.existing_events):
-            if i < len(self.existing_events) - 1:
-                previous_event = self.existing_events[i + 1]
-                unscheduled_slots = self.get_unscheduled_slots(previous_event, event)
-                with suppress(IndexError):
-                    self.reschedule_events(unscheduled_slots)
+        # for i, event in enumerate(self.existing_events):
+        #     if i < len(self.existing_events) - 1:
+        #         previous_event = self.existing_events[i + 1]
+        #         unscheduled_slots = self.get_unscheduled_slots(previous_event, event)
+        #         with suppress(IndexError):
+        #             self.reschedule_events(unscheduled_slots)
 
         last_event = self.existing_events[-1]
         for events in self.unscheduled_events.values():
             for event in events:
                 scheduled_event = self.schedule_next(last_event, event)
                 last_event = scheduled_event
-
         self.persist_new_events()
