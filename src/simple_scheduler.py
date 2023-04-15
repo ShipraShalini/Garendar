@@ -1,6 +1,8 @@
 import bisect
 from collections import defaultdict
+from contextlib import suppress
 from datetime import datetime, timedelta
+from operator import attrgetter, itemgetter
 
 from models.event import Event
 
@@ -17,23 +19,10 @@ def _get_workday_end(workday: datetime):
     return datetime(day=workday.day, month=workday.month, year=workday.year, hour=18)
 
 
-def needs_rescheduling(new_event: dict, existing_event: Event) -> bool:
-    event_start = new_event["start"]
-    event_end = new_event["end"]
-
-    # Check if event falls during the weekends
-    if event_start.date().weekday() > 4:
-        return True
-
-    # Check if the even falls outside the workday
-    if event_start < _get_workday_start(event_start) or event_end > _get_workday_end(event_end):
-        return True
-
-    return existing_event.start >= event_start or existing_event.end <= event_start
-
-
 class Scheduler:
     def __init__(self):
+        existing_events = get_all_events()
+        self.existing_events = list(existing_events.dicts())
         self.unscheduled_events = {}
         self.scheduled_events = []
         self.unscheduled_event_durations = []
@@ -42,6 +31,32 @@ class Scheduler:
     def _calculate_duration_mins(start_time, end_time):
         duration = end_time - start_time
         return duration.seconds / 60
+
+    def needs_rescheduling(self, event: dict) -> bool:
+        event_start = event["start"]
+        event_end = event["end"]
+
+        # Check if event falls during the weekends
+        if event_start.date().weekday() > 4:
+            return True
+
+        # Check if the even falls outside the workday
+        if event_start < _get_workday_start(event_start) or event_end > _get_workday_end(event_end):
+            return True
+        pivot = bisect.bisect_left(self.existing_events, event["start"], key=itemgetter("start"))
+        with suppress(IndexError):
+            earlier_event = self.existing_events[pivot]
+            if self.is_overlapping(earlier_event, event):
+                return True
+
+        with suppress(IndexError):
+            next_event = self.existing_events[pivot + 1]
+            if self.is_overlapping(event, next_event):
+                return True
+
+    @staticmethod
+    def is_overlapping(event1, event2):
+        return event1["end"] >= event2["start"] or event1["start"] <= event2["end"]
 
     def get_unscheduled_slots(self, event1: Event, event2: Event):
         unscheduled_slots = defaultdict(list)
@@ -117,23 +132,29 @@ class Scheduler:
         self.unscheduled_events[duration].append(event)
 
     def persist_new_events(self):
-        Event.insert_many(self.scheduled_events)
+        Event.insert_many(self.scheduled_events).execute()
 
     def schedule_events(self, new_events: list[dict]):
         sorted_new_events = sorted(new_events, key=lambda e: e["start"])
-        existing_events = get_all_events()
 
-        for i, event in enumerate(existing_events):
-            if i > 0:
-                previous_event = existing_events[i - 1]
-                unscheduled_slots = self.get_unscheduled_slots(previous_event, event)
-                self.reschedule(unscheduled_slots)
-
+        for event in sorted_new_events:
             curr_event = sorted_new_events.pop(0)
-            if needs_rescheduling(curr_event, event):
+            if self.needs_rescheduling(curr_event):
                 self.update_unscheduled_events(curr_event)
             else:
                 event.pop("duration")
                 self.scheduled_events.append(event)
+                bisect.insort(self.existing_events, event, key=lambda x: x["start"])
 
+            # if i < len(self.existing_events) -1:
+            #     previous_event = self.existing_events[i + 1]
+            #     unscheduled_slots = self.get_unscheduled_slots(previous_event, event)
+            #     self.reschedule(unscheduled_slots)
+            #
+            # if needs_rescheduling(curr_event, event):
+            #     self.update_unscheduled_events(curr_event)
+            # else:
+            #     event.pop("duration")
+            #     self.scheduled_events.append(event)
+            #     bisect.insort(self.existing_events, event, key=lambda x: x["start"])
         self.persist_new_events()
