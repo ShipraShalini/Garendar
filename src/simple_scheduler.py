@@ -87,6 +87,8 @@ class Scheduler:
             if duration in self.unscheduled_events:
                 relevant_slots = unscheduled_slots[duration]
                 for i in range(len(relevant_slots)):
+                    if not self.unscheduled_events[duration]:
+                        continue
                     event_to_reschedule = self.unscheduled_events[duration].pop(0)
                     slot = relevant_slots.pop(0)
                     self._reschedule(event_to_reschedule, slot)
@@ -102,7 +104,6 @@ class Scheduler:
 
     def _handle_slots(self, duration, unscheduled_slots, sorted_slot_durations):
         # todo : rename
-        return
         pivot = bisect.bisect(self.unscheduled_event_durations, duration)
         relevant_event_duration = self.unscheduled_event_durations[pivot - 1]
         pivot -= 1
@@ -111,12 +112,13 @@ class Scheduler:
             if not self.unscheduled_events[relevant_event_duration]:
                 self.unscheduled_events.pop(relevant_event_duration)
                 self.unscheduled_event_durations.remove(relevant_event_duration)
+                if pivot <= 0:
+                    break
                 relevant_event_duration = self.unscheduled_event_durations[pivot - 1]
                 pivot -= 1
-
             event_to_reschedule = self.unscheduled_events[relevant_event_duration].pop(0)
             slot = relevant_slots.pop(0)
-            scheduled_event = self._reschedule(event_to_reschedule, slot)
+            scheduled_event = self._reschedule(event_to_reschedule, slot, duration)
             gap_duration = self._calculate_duration_mins(scheduled_event["end"], slot["end"])
             if gap_duration not in unscheduled_slots:
                 unscheduled_slots[gap_duration] = []
