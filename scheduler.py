@@ -1,8 +1,9 @@
 import sys
 
-from src.parse_events import parse_input_events
-from src.schedule import display_all_events
-from src.simple_scheduler import Scheduler
+from src.event_parser import parse_input_events
+from src.exceptions import ValidationError
+from src.scheduler import Scheduler
+from src.utils import display_all_events
 
 input_events = sys.argv[1]
 
@@ -14,4 +15,8 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except ValidationError as e:
+        print(e)
+        exit(1)

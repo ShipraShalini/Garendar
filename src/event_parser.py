@@ -2,13 +2,15 @@ from datetime import datetime
 
 from src.constants import DATE_FORMAT, DURATION_DELIMITER, EVENT_DELIMITER, MINUTES_IN_9_HOURS
 from src.exceptions import ValidationError
+from src.utils import calculate_duration_mins
 
 
 def _get_event_duration(start_time, end_time):
-    duration = end_time - start_time
-    duration = duration.seconds / 60
-    remainder = duration % 5  # Each event is multiple of 5 mins
-    return duration + remainder
+    duration = calculate_duration_mins(start_time, end_time)
+    # Each event is multiple of 5 mins
+    remainder = duration % 5
+    increment = 5 - remainder if remainder else 0
+    return duration + increment
 
 
 def validate_event(start_time, end_time, duration):
