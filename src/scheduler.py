@@ -23,11 +23,6 @@ class Scheduler:
         self.unscheduled_event_durations = []
         self.unscheduled_slots = defaultdict(list)
 
-    @staticmethod
-    def is_overlapping(event1: dict, event2: dict) -> bool:
-        """Check if the two events overlap."""
-        return event1["end"] >= event2["start"] or event1["start"] <= event2["end"]
-
     def _clean_unassigned_slots(self, duration: int, sorted_slot_durations: list[int]):
         """Clean unassigned slots.
 
@@ -38,9 +33,45 @@ class Scheduler:
             self.unscheduled_slots.pop(duration)
             sorted_slot_durations.remove(duration)
 
+    def _clean_unscheduled_events(self, event_duration: int):
+        """Clean unscheduled events.
+
+        If there's event duration which doesn't have any unscheduled event left,
+        remove the duration from the unscheduled_events dict and from the unscheduled_event_durations list.
+        """
+        if not self.unscheduled_events[event_duration]:
+            self.unscheduled_events.pop(event_duration)
+            self.unscheduled_event_durations.remove(event_duration)
+
+    @staticmethod
+    def is_overlapping(event1: dict, event2: dict) -> bool:
+        """Check if the two events overlap."""
+        return event1["end"] >= event2["start"] or event1["start"] <= event2["end"]
+
     def persist_new_events(self):
         """Saved new events to the db."""
         Event.insert_many(self.scheduled_events).execute()
+
+    def _get_last_scheduled_event(self):
+        """Get last scheduled event.
+
+        Return the last existing_event if existing_events is populated.
+
+        There can be a case if there is no event in the db and all the events are on weekends, then existing_event.
+        will be empty. So schedule the first event and return it.
+        """
+        if self.existing_events:
+            return self.existing_events[-1]
+        # Get the first smallest unassigned event.
+        smallest_duration = self.unscheduled_event_durations[0]
+        event = self.unscheduled_events[smallest_duration].pop(0)
+        event_duration = event.pop("duration")
+        # Schedule the event at the starting of the first workday.
+        event["start"] = get_next_workday_start(event["start"])
+        event["end"] = event["start"] + timedelta(minutes=event_duration)
+        self.scheduled_events.append(event)
+        self._clean_unscheduled_events(event_duration)
+        return event
 
     def update_unscheduled_events(self, event: dict) -> None:
         """Add events that need rescheduling to unscheduled_events.
@@ -85,9 +116,7 @@ class Scheduler:
         event["end"] = event_end
 
         self.scheduled_events.append(event)
-        if not self.unscheduled_events[event_duration]:
-            self.unscheduled_events.pop(event_duration)
-            self.unscheduled_event_durations.remove(event_duration)
+        self._clean_unscheduled_events(event_duration)
         bisect.insort(self.existing_events, event, key=lambda x: x["start"])
         return event
 
@@ -163,7 +192,7 @@ class Scheduler:
                 # If there are still unscheduled slots left after scheduling all events of same duration,
                 # assign slot to events with shorter duration.
                 if relevant_slots:
-                    self.assign_slots_to_shorter_events(duration, self.unscheduled_slots, sorted_slot_durations)
+                    self.assign_slots_to_shorter_events(duration, sorted_slot_durations)
 
             # If there is no exact match between any slot duration and event duration,
             # assign slot to events with shorter duration.
@@ -222,6 +251,7 @@ class Scheduler:
         """Schedule all input events."""
         # Sort input events based on start time.
         sorted_new_events = sorted(new_events, key=lambda e: e["start"])
+        len(sorted_new_events)
 
         for event in sorted_new_events:
             # If event needs rescheduling add it to unscheduled_events, to be scheduled later.
@@ -252,7 +282,8 @@ class Scheduler:
 
         # If there are still events left which weren't assigned between the events.
         # Schedule them after the last event, after one another.
-        last_event = self.existing_events[-1]
+
+        last_event = self._get_last_scheduled_event()
         for duration in self.unscheduled_event_durations:
             # Assigning smaller events first, so that we make most of the day.
             events = self.unscheduled_events[duration]

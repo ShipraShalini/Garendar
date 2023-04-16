@@ -15,6 +15,8 @@ def main():
     Scheduler().schedule_events(events)
     # Display all the events.
     display_all_events()
+    # Return a list
+    # return list(get_all_events().dicts())
 
 
 if __name__ == "__main__":
