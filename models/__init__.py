@@ -1,3 +1,5 @@
 from peewee import SqliteDatabase
 
-db = SqliteDatabase("garendar.db")
+from src.config import DB_NAME
+
+db = SqliteDatabase(DB_NAME)

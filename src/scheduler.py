@@ -46,7 +46,12 @@ class Scheduler:
     @staticmethod
     def is_overlapping(event1: dict, event2: dict) -> bool:
         """Check if the two events overlap."""
-        return event1["end"] >= event2["start"] or event1["start"] <= event2["end"]
+        return (
+            (event1["start"] > event2["start"] and event1["end"] < event2["end"])
+            or (event1["start"] < event2["start"] and event1["end"] > event2["end"])
+            or (event1["end"] > event2["start"])
+            or (event2["end"] < event1["start"])
+        )
 
     def persist_new_events(self):
         """Saved new events to the db."""
@@ -84,6 +89,18 @@ class Scheduler:
             self.unscheduled_events[duration] = []
         self.unscheduled_events[duration].append(event)
 
+    def _add_remaining_time_to_unscheduled_slots(self, scheduled_event: dict, slot: dict, sorted_slot_durations: list):
+        """Add a new `unscheduled slot` using the time left in the slot after scheduling the event.
+
+        Also update sorted_slot_durations.
+        """
+        gap_duration = calculate_duration_minutes(scheduled_event["end"], slot["end"])
+        if gap_duration not in self.unscheduled_slots:
+            self.unscheduled_slots[gap_duration] = []
+            bisect.insort(sorted_slot_durations, gap_duration)
+
+        self.unscheduled_slots[gap_duration].append({"start": scheduled_event["end"], "end": slot["end"]})
+
     def schedule_next(self, last_event: dict, event_to_be_rescheduled: dict) -> dict:
         """Schedule the event after the last event"""
         duration = event_to_be_rescheduled.pop("duration")
@@ -100,7 +117,7 @@ class Scheduler:
         self.scheduled_events.append(event_to_be_rescheduled)
         return event_to_be_rescheduled
 
-    def _reschedule(self, event: dict, slot: dict, slot_duration: int = None) -> dict:
+    def _reschedule(self, event: dict, slot: dict, slot_duration: int) -> dict:
         """Reschedule event to the provided slot.
 
         Remove the event from `unscheduled_events` and add to `existing_events`.
@@ -108,7 +125,7 @@ class Scheduler:
         """
         event_duration = event.pop("duration")
         event_start = slot["start"]
-        if slot_duration and event_duration < slot_duration:
+        if event_duration < slot_duration:
             event_end = event_start + timedelta(minutes=event_duration)
         else:
             event_end = slot["end"]
@@ -188,7 +205,7 @@ class Scheduler:
                         continue
                     event_to_reschedule = self.unscheduled_events[duration].pop(0)
                     slot = relevant_slots.pop(0)
-                    self._reschedule(event_to_reschedule, slot)
+                    self._reschedule(event_to_reschedule, slot, duration)
                 # If there are still unscheduled slots left after scheduling all events of same duration,
                 # assign slot to events with shorter duration.
                 if relevant_slots:
@@ -235,23 +252,10 @@ class Scheduler:
             self._add_remaining_time_to_unscheduled_slots(scheduled_event, slot, sorted_slot_durations)
             self._clean_unassigned_slots(slot_duration, sorted_slot_durations)
 
-    def _add_remaining_time_to_unscheduled_slots(self, scheduled_event: dict, slot: dict, sorted_slot_durations: list):
-        """Add a new `unscheduled slot` using the time left in the slot after scheduling the event.
-
-        Also update sorted_slot_durations.
-        """
-        gap_duration = calculate_duration_minutes(scheduled_event["end"], slot["end"])
-        if gap_duration not in self.unscheduled_slots:
-            self.unscheduled_slots[gap_duration] = []
-            bisect.insort(sorted_slot_durations, gap_duration)
-
-        self.unscheduled_slots[gap_duration].append({"start": scheduled_event["end"], "end": slot["end"]})
-
     def schedule_events(self, new_events: list[dict]):
         """Schedule all input events."""
         # Sort input events based on start time.
         sorted_new_events = sorted(new_events, key=lambda e: e["start"])
-        len(sorted_new_events)
 
         for event in sorted_new_events:
             # If event needs rescheduling add it to unscheduled_events, to be scheduled later.

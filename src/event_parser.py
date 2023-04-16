@@ -28,8 +28,11 @@ def parse_event_details(event_details: str) -> dict:
     end_time, _, event = end_time_n_event.partition(EVENT_DELIMITER)
     if not (start_time and end_time and event):
         raise ValidationError(f"Invalid event string: {event_details}")
-    start_time = datetime.strptime(start_time.strip(), DATE_FORMAT)
-    end_time = datetime.strptime(end_time.strip(), DATE_FORMAT)
+    try:
+        start_time = datetime.strptime(start_time.strip(), DATE_FORMAT)
+        end_time = datetime.strptime(end_time.strip(), DATE_FORMAT)
+    except ValueError:
+        raise ValidationError(f"Dates should be in the format YYYY/MM/DD HH:mm: {event_details}")
 
     duration = _get_event_duration(start_time, end_time)
 
