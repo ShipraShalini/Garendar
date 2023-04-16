@@ -144,62 +144,6 @@ def test_schedule_next(last_event, event, expected_final_event):
     assert final_event == expected_final_event == scheduler.scheduled_events[0]
 
 
-# @pytest.mark.parametrize(
-#     "event, slot, expected_updated_event, slot_duration",
-#     [
-#         (
-#             ("2023-10-16 12:00", "2023-10-16 13:00"),
-#             ("2023-10-16 12:00", "2023-10-16 12:40"),
-#             ("2023-10-17 09:00", "2023-10-17 09:40"),
-#             60,
-#         ),
-#         (
-#             ("2023-10-16 17:00", "2023-10-16 17:40"),
-#             ("2023-10-16 12:00", "2023-10-16 12:40"),
-#             ("2023-10-17 09:00", "2023-10-17 09:40"),
-#         ),
-#         (
-#             ("2023-10-15 17:00", "2023-10-15 17:40"),
-#             ("2023-10-16 12:00", "2023-10-16 12:40"),
-#             ("2023-10-16 09:00", "2023-10-16 09:40"),
-#         ),
-#         (
-#             ("2023-10-14 17:00", "2023-10-14 17:40"),
-#             ("2023-10-16 12:00", "2023-10-16 12:40"),
-#             ("2023-10-16 09:00", "2023-10-16 09:40"),
-#         ),
-#         (
-#             ("2023-10-13 17:00", "2023-10-13 17:40"),
-#             ("2023-10-16 12:00", "2023-10-16 12:40"),
-#             ("2023-10-16 09:00", "2023-10-16 09:40"),
-#         ),
-#         (
-#             ("2023-10-12 17:00", "2023-10-12 17:40"),
-#             ("2023-10-16 12:00", "2023-10-16 12:40"),
-#             ("2023-10-13 09:00", "2023-10-13 09:40"),
-#         ),
-#     ],
-# )
-# def test_reschedule(event, slot, expected_updated_event, slot_duration):
-#     event = {"start": _get_dt(event[0]), "end": _get_dt(event[1]), "duration": 40, "description": "schedule_me"}
-#     slot = {"start": _get_dt(slot[0]), "end": _get_dt(slot[1])}
-#     expected_updated_event = {
-#         "start": _get_dt(expected_updated_event[0]),
-#         "end": _get_dt(expected_updated_event[1]),
-#         "description": "schedule_me",
-#     }
-#
-#     scheduler = Scheduler()
-#     scheduler.existing_events = [
-#         {"start": _get_dt("2023-10-16 11:00"), "end": _get_dt("2023-10-16 12:00"), "description": "scheduled1"},
-#         {"start": _get_dt("2023-10-16 13:00"), "end": _get_dt("2023-10-16 14:00"), "description": "scheduled2"},
-#         {"start": _get_dt("2023-10-16 15:00"), "end": _get_dt("2023-10-16 16:00"), "description": "scheduled2"},
-#     ]
-#     updated_event = scheduler._reschedule(event, slot, slot_duration)
-#
-#     assert updated_event == expected_updated_event == scheduler.scheduled_events[0]
-
-
 def _get_dt(datetime_str):
     """Return datetime in less characters."""
     return datetime.fromisoformat(datetime_str)
