@@ -9,8 +9,11 @@ input_events = sys.argv[1]
 
 
 def main():
+    # Parse input events
     events = parse_input_events(input_events)
+    # Schedule these events.
     Scheduler().schedule_events(events)
+    # Display all the events.
     display_all_events()
 
 
@@ -18,5 +21,4 @@ if __name__ == "__main__":
     try:
         main()
     except ValidationError as e:
-        print(e)
-        exit(1)
+        sys.exit(e)
