@@ -201,5 +201,5 @@ def test_schedule_next(last_event, event, expected_final_event):
 
 
 def _get_dt(datetime_str):
-    """Returns datetime in less characters"""
+    """Return datetime in less characters."""
     return datetime.fromisoformat(datetime_str)

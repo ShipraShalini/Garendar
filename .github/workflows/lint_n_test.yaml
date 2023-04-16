@@ -1,0 +1,47 @@
+name: Lint & Test
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - src/**
+      - tests/**
+      - .github/workflows/lint_n_test.yaml
+      - pyproject.toml
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    container: python:3.10-bullseye
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install and configure Poetry
+        uses: snok/install-poetry@v1
+
+      - name: Set up cache
+        id: cache-deps
+        uses: actions/cache@v3
+        with:
+          path: .venv
+          key: pydeps-${{ hashFiles('**/poetry.lock') }}
+
+      - name: Install dependencies
+        if: steps.cache-deps.outputs.cache-hit != 'true'
+        run: poetry install --no-interaction --no-root --with dev
+
+      - name: Migrate database
+        run: poetry run pw_migrate migrate --database sqlite:///garendar.db
+
+      - name: Lint with black
+        run: poetry run black --check .
+
+      - name: Lint with isort
+        run: poetry run isort --check .
+
+      - name: Lint with flake8
+        run: poetry run flake8 .
+
+      - name: Run Tests
+        run: poetry run pytest tests -s -v

@@ -7,7 +7,7 @@ from src.constants import DATE_FORMAT
 
 
 class Event(Model):
-    id = UUIDField(primary_key=True, default=uuid4)
+    id = UUIDField(primary_key=True, default=uuid4)  # noqa: A003
     description = TextField()
     start = DateTimeField(index=True)
     end = DateTimeField(index=True)

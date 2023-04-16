@@ -49,7 +49,7 @@ def test_get_workday_end(workday, expected_workday_end):
         ("2022-08-28 12:00", "2022-08-29 09:00"),  # Sunday -> Monday
     ],
 )
-def test_get_workday_end(workday, expected_next_workday_start):
+def test_get_next_workday_start(workday, expected_next_workday_start):
     workday = datetime.fromisoformat(workday)
     expected_next_workday_start = datetime.fromisoformat(expected_next_workday_start)
 

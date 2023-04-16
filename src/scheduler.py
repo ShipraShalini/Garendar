@@ -54,7 +54,7 @@ class Scheduler:
         )
 
     def persist_new_events(self):
-        """Saved new events to the db."""
+        """Save new events to the db."""
         Event.insert_many(self.scheduled_events).execute()
 
     def _get_last_scheduled_event(self):
@@ -102,7 +102,7 @@ class Scheduler:
         self.unscheduled_slots[gap_duration].append({"start": scheduled_event["end"], "end": slot["end"]})
 
     def schedule_next(self, last_event: dict, event_to_be_rescheduled: dict) -> dict:
-        """Schedule the event after the last event"""
+        """Schedule the event after the last event."""
         duration = event_to_be_rescheduled.pop("duration")
         start_time = last_event["end"]
         end_time = last_event["end"] + timedelta(minutes=duration)
@@ -192,10 +192,10 @@ class Scheduler:
         return self.unscheduled_slots
 
     def reschedule_events(self):
-        """Reschedule events"""
+        """Reschedule events."""
         if not (self.unscheduled_events and self.unscheduled_slots):
             return
-        sorted_slot_durations = sorted(list(self.unscheduled_slots.keys()), reverse=True)
+        sorted_slot_durations = sorted(self.unscheduled_slots.keys(), reverse=True)
         for duration in sorted_slot_durations:
             # If there's an exact match between any slot duration and event duration, assign events.
             if duration in self.unscheduled_events:
