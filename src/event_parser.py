@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from src.constants import DATE_FORMAT, DURATION_DELIMITER, EVENT_DELIMITER, MINUTES_IN_9_HOURS
+from src.constants import DATE_FORMAT, DURATION_DELIMITER, EVENT_DELIMITER, MINUTES_IN_9_HOURS, INPUT_DELIMITER
 from src.exceptions import ValidationError
 from src.utils import calculate_duration_mins
 
@@ -36,4 +36,4 @@ def parse_event_details(event_details: str) -> dict:
 
 
 def parse_input_events(event_list: str) -> list[dict]:
-    return [parse_event_details(event.strip()) for event in event_list.split(",")]
+    return [parse_event_details(event.strip()) for event in event_list.split(INPUT_DELIMITER)]
