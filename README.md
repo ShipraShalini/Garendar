@@ -1,6 +1,6 @@
 # Garendar
 
-Python3 script for Scheduling events for Gary, so that no event overlaps and all events are scheduled.
+Python3 script for Scheduling events for Gary, so that no event overlaps and all events are scheduled. The events are scheduled on weekdays between 09:00 and 18:00. hours, and if there's an event that falls outside of these hours they are rescheduled.
 - The script accepts a comma separated string as input.
 - All the events are persisted in a sqlite3 db.
 - The script outputs all the events.
