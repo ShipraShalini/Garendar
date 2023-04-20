@@ -33,7 +33,7 @@ def test_schedule_events(db):
     ]
 
     Scheduler().schedule_events(new_events)
-    for event, expected_event in zip(get_all_events(), expected_result):
+    for event, expected_event in zip(get_all_events(), expected_result, strict=True):
         assert event.start == expected_event[0]
         assert event.end == expected_event[1]
         assert event.description == expected_event[2]

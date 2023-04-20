@@ -200,7 +200,7 @@ class Scheduler:
             # If there's an exact match between any slot duration and event duration, assign events.
             if duration in self.unscheduled_events:
                 relevant_slots = self.unscheduled_slots[duration]
-                for i in range(len(relevant_slots)):
+                for _ in range(len(relevant_slots)):
                     if not self.unscheduled_events[duration]:
                         continue
                     event_to_reschedule = self.unscheduled_events[duration].pop(0)
@@ -235,7 +235,7 @@ class Scheduler:
         # Get all the slots with duration `slot_duration` and assign events of shorter durations.
         relevant_slots = self.unscheduled_slots[slot_duration]
 
-        for i in range(len(relevant_slots)):
+        for _ in range(len(relevant_slots)):
             # If all the events with `relevant_event_duration` have been scheduled,
             # assign the smaller events to `relevant_event_duration`.
             if relevant_event_duration not in self.unscheduled_events:

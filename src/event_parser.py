@@ -32,7 +32,7 @@ def parse_event_details(event_details: str) -> dict:
         start_time = datetime.strptime(start_time.strip(), DATE_FORMAT)
         end_time = datetime.strptime(end_time.strip(), DATE_FORMAT)
     except ValueError:
-        raise ValidationError(f"Dates should be in the format YYYY/MM/DD HH:mm: {event_details}")
+        raise ValidationError(f"Dates should be in the format YYYY/MM/DD HH:mm: {event_details}") from None
 
     duration = _get_event_duration(start_time, end_time)
 
