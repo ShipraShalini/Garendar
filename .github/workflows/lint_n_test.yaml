@@ -16,10 +16,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
-
       - name: Lint with ruff
         run: |
           pipx install ruff==0.0.262
@@ -28,15 +24,13 @@ jobs:
       - name: Install Poetry
         run: pipx install poetry
 
-      - name: Set up cache
-        id: cache-deps
-        uses: actions/cache@v3
+      - name: Setup python with caching
+        uses: actions/setup-python@v4
         with:
-          path: .venv
-          key: pydeps-${{ hashFiles('**/poetry.lock') }}
+          python-version: '3.10'
+          cache: 'poetry'
 
       - name: Install dependencies
-        if: steps.cache-deps.outputs.cache-hit != 'true'
         run: poetry install --no-interaction --no-root --with dev
 
       - name: Migrate database
